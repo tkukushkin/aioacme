@@ -1,9 +1,9 @@
 # aioacme
 
 [![PyPI - Status](https://img.shields.io/pypi/status/aioacme)](https://pypi.org/project/aioacme)
-[![PyPI](https://img.shields.io/pypi/v/aioacme)](https://pypi.org/project/aioacme/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aioacme)](https://pypi.org/project/aioacme/)
-[![PyPI - License](https://img.shields.io/pypi/l/aioacme)](https://pypi.org/project/aioacme/)
+[![PyPI](https://img.shields.io/pypi/v/aioacme)](https://pypi.org/project/aioacme)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aioacme)](https://pypi.org/project/aioacme)
+[![PyPI - License](https://img.shields.io/pypi/l/aioacme)](https://pypi.org/project/aioacme)
 
 Simple async client for ACME protocol.
 
