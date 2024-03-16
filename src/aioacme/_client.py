@@ -13,6 +13,7 @@ import serpyco_rs
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
+from aioacme._directories import LETS_ENCRYPT_STAGING_DIRECTORY
 from aioacme._exceptions import AcmeError
 from aioacme._jwk import JWK, jwk_thumbprint, make_jwk
 from aioacme._jws import jws_encode
@@ -40,7 +41,7 @@ class Client:
         self,
         *,
         account_key: PrivateKeyTypes,
-        directory_url: str = 'https://acme-staging-v02.api.letsencrypt.org/directory',
+        directory_url: str = LETS_ENCRYPT_STAGING_DIRECTORY,
         account_uri: str | None = None,
     ) -> None:
         """
