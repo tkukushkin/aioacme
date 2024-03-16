@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools >= 61.0", "setuptools-scm >= 8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version"]
+name = "aioacme"
+requires-python = ">=3.10"
+authors = [{ name = "Timofei Kukushkin", email = "tima@kukushkin.me" }]
+description = "Async ACME client implementation"
+readme = "README.md"
+dependencies = [
+  "aiohttp",
+  "cryptography",
+  "typing-extensions; python_version<'3.11'",
+  "orjson",
+  "serpyco-rs",
+]
+license = { file = "LICENSE" }
+classifiers = [
+  "Development Status :: 4 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/tkukushkin/aioacme"
+Repository = "https://github.com/tkukushkin/aioacme.git"
+Issues = "https://github.com/tkukushkin/aioacme/issues"
+Changelog = "https://github.com/tkukushkin/aioacme/releases"
+
+[tool.setuptools_scm]
+version_file = "src/aioacme/_version.py"

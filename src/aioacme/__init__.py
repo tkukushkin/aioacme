@@ -13,6 +13,7 @@ from aioacme._models import (
     OrderStatus,
     RevocationReason,
 )
+from aioacme._version import __version__, __version_tuple__
 
 __all__ = [
     'Authorization',
@@ -28,4 +29,6 @@ __all__ = [
     'RevocationReason',
     'AcmeError',
     'Client',
+    '__version__',
+    '__version_tuple__',
 ]
