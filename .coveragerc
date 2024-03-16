@@ -1,0 +1,13 @@
+[run]
+branch = true
+relative_files = true
+source =
+  aioacme
+
+[paths]
+source =
+  src
+  */site-packages
+
+[report]
+show_missing = true

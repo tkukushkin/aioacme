@@ -1,0 +1,9 @@
+-r tests.txt
+-r lint.txt
+-e .
+
+pytest-sugar
+ruff-lsp
+tox
+tox-uv
+uv
