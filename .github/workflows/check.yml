@@ -49,8 +49,7 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         files: .tox/coverage.xml
-        flags: flags-${{ matrix.python-version }}
-        name: name-${{ matrix.python-version }}
+        flags: ${{ matrix.python-version }}
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
