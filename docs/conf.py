@@ -10,7 +10,7 @@ extensions = [
     'sphinx_autodoc_typehints',
     'myst_parser',
 ]
-version = release = '.'.join(map(str, aioacme.__version_tuple__[:3]))
+version = release = aioacme.__version__
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
