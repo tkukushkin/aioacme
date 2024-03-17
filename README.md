@@ -43,7 +43,9 @@ async def main():
                 # authorization reused
                 continue
             
-            challenge = next(c for c in authorization.challenges if c.type is aioacme.ChallengeType.dns01)
+            challenge = next(
+                c for c in authorization.challenges if c.type is aioacme.ChallengeType.dns01
+            )
             
             domain = client.get_dns_challenge_domain(authorization.identifier.value)
             validation = client.get_dns_challenge_validation(challenge.token)
@@ -53,7 +55,10 @@ async def main():
             
             await client.answer_challenge(challenge.url)
             
-            while authorization.status not in (aioacme.AuthorizationStatus.valid, aioacme.AuthorizationStatus.invalid):
+            while authorization.status not in (
+                aioacme.AuthorizationStatus.valid,
+                aioacme.AuthorizationStatus.invalid
+            ):
                 await asyncio.sleep(1)
                 authorization = await client.get_authorization(authorization_uri)
             
@@ -63,11 +68,14 @@ async def main():
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         csr = (
             x509.CertificateSigningRequestBuilder()
-            .subject_name(x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "example.com")]))
-            .add_extension(x509.SubjectAlternativeName([x509.DNSName("example.com")]), critical=False)
+            .subject_name(x509.Name([
+                x509.NameAttribute(x509.NameOID.COMMON_NAME, "example.com")
+            ]))
+            .add_extension(x509.SubjectAlternativeName([
+                x509.DNSName("example.com")
+            ]), critical=False)
             .sign(key, hashes.SHA256())
         )
-        
         order = await client.finalize_order(order.finalize, csr)
         
         while order.status not in {aioacme.OrderStatus.valid, aioacme.OrderStatus.invalid}:
