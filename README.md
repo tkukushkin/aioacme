@@ -6,6 +6,7 @@
 [![PyPI - License](https://img.shields.io/pypi/l/aioacme)](https://pypi.org/project/aioacme)
 [![CI Status](https://github.com/tkukushkin/aioacme/actions/workflows/check.yml/badge.svg)](https://github.com/tkukushkin/aioacme/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/tkukushkin/aioacme/graph/badge.svg?token=376OQ1J9YH)](https://codecov.io/gh/tkukushkin/aioacme)
+[![docs](https://readthedocs.org/projects/aioacme/badge/?version=latest)](https://aioacme.readthedocs.io/stable/)
 
 Simple async client for ACME protocol.
 
