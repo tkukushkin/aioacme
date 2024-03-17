@@ -1,10 +1,5 @@
 import asyncio
-import io
-import ssl
-import subprocess
-import tarfile
 import uuid
-from pathlib import Path
 
 import aiohttp
 import pytest
@@ -31,43 +26,15 @@ def start_pebble(docker_services):
     docker_services.wait_for_service('pebble', 15000)
 
 
-@pytest.fixture(scope='session')
-def pebble_ssl_context(start_pebble, docker_compose_files, docker_services_project_name) -> ssl.SSLContext:
-    # pebble image uses scratch as base image, so we can't use exec to copy the file out
-    proc = subprocess.run(
-        [
-            'docker',
-            'compose',
-            '--project-directory',
-            Path(__file__).parent,
-            '-f',
-            docker_compose_files[0],
-            '-p',
-            docker_services_project_name,
-            'cp',
-            'pebble:test/certs/pebble.minica.pem',
-            '-',
-        ],
-        check=False,
-        capture_output=True,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.decode('utf-8'))
-    with tarfile.TarFile(mode='r', fileobj=io.BytesIO(proc.stdout)) as tar:
-        cert = tar.extractfile('pebble.minica.pem').read()
-
-    return ssl.create_default_context(cadata=cert.decode('ascii'))
-
-
 @pytest.fixture()
 def account_key() -> ec.EllipticCurvePrivateKey:
     return ec.generate_private_key(ec.SECP256R1())
 
 
 @pytest.fixture()
-async def client(pebble_ssl_context, docker_ip, account_key) -> aioacme.Client:
+async def client(docker_ip, account_key) -> aioacme.Client:
     async with aioacme.Client(
-        directory_url=f'https://{docker_ip}:14000/dir', ssl=pebble_ssl_context, account_key=account_key
+        directory_url=f'https://{docker_ip}:14000/dir', ssl=False, account_key=account_key
     ) as client:
         yield client
 
