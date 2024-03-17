@@ -280,8 +280,8 @@ class Client:
                 raise AcmeError(error)
 
             # retry bad nonce
-            async with self._request(url, data=data, jwk=jwk, key=key) as response:
-                yield response
+            async with self._request(url, data=data, jwk=jwk, key=key) as retried_response:
+                yield retried_response
 
     async def _wrap_in_jws(  # noqa: PLR0913
         self,
