@@ -1,10 +1,5 @@
 import asyncio
-import io
-import ssl
-import subprocess
-import tarfile
 import uuid
-from pathlib import Path
 
 import aiohttp
 import pytest
@@ -23,40 +18,24 @@ def event_loop():
 
 
 @pytest.fixture(scope='session')
-def start_pebble(docker_services):
-    docker_services.start('challtestsrv')
+async def pebble_url(docker_services, docker_ip) -> str:
     docker_services.start('pebble')
-    docker_services.wait_for_service('challtestsrv', 8055)
-    docker_services.wait_for_service('pebble', 14000)
-    docker_services.wait_for_service('pebble', 15000)
+    port = docker_services.port_for('pebble', 14000)
+    url = f'https://{docker_ip}:{port}'
 
+    # wait for pebble to be ready
+    async with aiohttp.ClientSession() as session:
+        for _ in range(100):
+            try:
+                async with session.get(url, ssl=False):
+                    break
+            except aiohttp.ClientError as exc:
+                last_exc = exc
+                await asyncio.sleep(0.1)
+        else:
+            raise TimeoutError from last_exc
 
-@pytest.fixture(scope='session')
-def pebble_ssl_context(start_pebble, docker_compose_files, docker_services_project_name) -> ssl.SSLContext:
-    # pebble image uses scratch as base image, so we can't use exec to copy the file out
-    proc = subprocess.run(
-        [
-            'docker',
-            'compose',
-            '--project-directory',
-            Path(__file__).parent,
-            '-f',
-            docker_compose_files[0],
-            '-p',
-            docker_services_project_name,
-            'cp',
-            'pebble:test/certs/pebble.minica.pem',
-            '-',
-        ],
-        check=False,
-        capture_output=True,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.decode('utf-8'))
-    with tarfile.TarFile(mode='r', fileobj=io.BytesIO(proc.stdout)) as tar:
-        cert = tar.extractfile('pebble.minica.pem').read()
-
-    return ssl.create_default_context(cadata=cert.decode('ascii'))
+    yield url
 
 
 @pytest.fixture()
@@ -65,10 +44,8 @@ def account_key() -> ec.EllipticCurvePrivateKey:
 
 
 @pytest.fixture()
-async def client(pebble_ssl_context, docker_ip, account_key) -> aioacme.Client:
-    async with aioacme.Client(
-        directory_url=f'https://{docker_ip}:14000/dir', ssl=pebble_ssl_context, account_key=account_key
-    ) as client:
+async def client(pebble_url, account_key) -> aioacme.Client:
+    async with aioacme.Client(directory_url=f'{pebble_url}/dir', ssl=False, account_key=account_key) as client:
         yield client
 
 
@@ -93,10 +70,13 @@ def csr(domain, private_key):
 
 
 @pytest.fixture(name='add_txt')
-def add_txt_fixture(start_pebble, docker_ip):
+def add_txt_fixture(docker_services, docker_ip):
+    docker_services.start('challtestsrv')
+    port = docker_services.wait_for_service('challtestsrv', 8055)
+
     async def add_txt(domain: str, value: str) -> None:
         async with aiohttp.request(
-            'POST', f'http://{docker_ip}:8055/set-txt', json={'host': domain + '.', 'value': value}
+            'POST', f'http://{docker_ip}:{port}/set-txt', json={'host': domain + '.', 'value': value}
         ) as response:
             response.raise_for_status()
 

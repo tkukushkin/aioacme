@@ -9,15 +9,15 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 import aioacme
 
 
-async def test_get_account_uri(client):
+async def test_get_account_uri(client, pebble_url):
     # act
     account_uri = await client.get_account_uri()
 
     # assert
-    assert account_uri.startswith('https://127.0.0.1:14000/my-account')
+    assert account_uri.startswith(f'{pebble_url}/my-account')
 
 
-async def test_new_order(client, domain):
+async def test_new_order(client, domain, pebble_url):
     # arrange
     identifiers = [aioacme.Identifier(domain)]
 
@@ -37,16 +37,16 @@ async def test_new_order(client, domain):
         error=None,
         certificate=None,
     )
-    assert order.uri.startswith('https://127.0.0.1:14000/my-order')
-    assert order.finalize.startswith('https://127.0.0.1:14000/finalize-order')
+    assert order.uri.startswith(f'{pebble_url}/my-order')
+    assert order.finalize.startswith(f'{pebble_url}/finalize-order')
     assert isinstance(order.expires, datetime)
-    assert order.authorizations[0].startswith('https://127.0.0.1:14000/authZ')
+    assert order.authorizations[0].startswith(f'{pebble_url}/authZ')
 
 
-async def test_get_order__no_order__exception(client):
+async def test_get_order__no_order__exception(client, pebble_url):
     # act
     with pytest.raises(aioacme.AcmeError) as exc_info:
-        await client.get_order('https://127.0.0.1:14000/my-order/foo')
+        await client.get_order(f'{pebble_url}/my-order/foo')
 
     assert exc_info.value.error == aioacme.Error(type='unknown', detail='')  # pebble doesn't return a proper error
 
@@ -62,7 +62,7 @@ async def test_get_order__order_exists__ok(client, domain):
     assert result == created_order
 
 
-async def test_get_authorization(client, domain):
+async def test_get_authorization(client, domain, pebble_url):
     # arrange
     identifier = aioacme.Identifier(domain)
     order = await client.new_order([identifier])
@@ -103,7 +103,7 @@ async def test_get_authorization(client, domain):
             token=mock.ANY,
         ),
     ]
-    assert all(c.url.startswith('https') for c in challenges)
+    assert all(c.url.startswith(pebble_url) for c in challenges)
 
 
 async def test_finalize__pending_order__error(client, domain, csr):
