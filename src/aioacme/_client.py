@@ -266,12 +266,22 @@ class Client:
             headers={'Content-Type': 'application/jose+json'},
         ) as response:
             self._add_nounce(response)
-            if response.status >= 300:
-                if not (await response.read()):
-                    raise AcmeError(Error(type='unknown', detail=''))
-                response_data = await response.json(loads=orjson.loads)
-                raise AcmeError(_error_serializer.load(response_data))
-            yield response
+
+            if response.status < 300:
+                yield response
+                return
+
+            try:
+                error = _error_serializer.load(await response.json(loads=orjson.loads))
+            except aiohttp.ContentTypeError:
+                error = Error(type='unknown', detail='')
+
+            if error.type != 'urn:ietf:params:acme:error:badNonce':
+                raise AcmeError(error)
+
+            # retry bad nonce
+            async with self._request(url, data=data, jwk=jwk, key=key) as response:
+                yield response
 
     async def _wrap_in_jws(  # noqa: PLR0913
         self,

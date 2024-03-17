@@ -8,7 +8,7 @@ services:
     environment:
       PEBBLE_AUTHZREUSE: '0'
       PEBBLE_VA_NOSLEEP: '1'
-      PEBBLE_WFE_NONCEREJECT: '0'
+      PEBBLE_WFE_NONCEREJECT: '30'
     networks:
       acmenet:
         ipv4_address: 10.30.50.2
