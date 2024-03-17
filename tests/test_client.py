@@ -7,7 +7,6 @@ from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 import aioacme
-from aioacme import Error
 
 
 async def test_get_account_uri(client):
@@ -49,7 +48,7 @@ async def test_get_order__no_order__exception(client):
     with pytest.raises(aioacme.AcmeError) as exc_info:
         await client.get_order('https://127.0.0.1:14000/my-order/foo')
 
-    assert exc_info.value.error == Error(type='unknown', detail='')  # pebble doesn't return a proper error
+    assert exc_info.value.error == aioacme.Error(type='unknown', detail='')  # pebble doesn't return a proper error
 
 
 async def test_get_order__order_exists__ok(client, domain):
