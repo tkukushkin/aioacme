@@ -1,5 +1,6 @@
 -r tests.txt
 -r lint.txt
+-r docs.txt
 -e .
 
 pytest-sugar

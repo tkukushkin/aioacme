@@ -47,6 +47,7 @@ class Client:
     ) -> None:
         """
         Create new ACME client.
+
         :param account_key: private key for account.
         :param directory_url: URL to get directory.
         :param account_uri: Optional account uri, if not provided, it would be fetched on first request.
@@ -107,6 +108,7 @@ class Client:
     def get_dns_challenge_domain(self, domain: str) -> str:
         """
         Generate domain for DNS challenge.
+
         :param domain: domain.
         :return: ACME challenge domain.
         """
@@ -115,6 +117,7 @@ class Client:
     def get_dns_challenge_validation(self, token: str) -> str:
         """
         Generate TXT record for DNS challenge.
+
         :param token: challenge token.
         :return: value for TXT record.
         """
@@ -167,7 +170,6 @@ class Client:
         Download ready certificate
 
         :param certificate: certificate URL.
-
         :return: certificate in PEM format.
         """
         async with self._request(certificate) as response:

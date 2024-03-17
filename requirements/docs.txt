@@ -1,0 +1,6 @@
+-e .
+
+furo
+sphinx
+sphinx-autodoc-typehints
+myst-parser
