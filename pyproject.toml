@@ -33,6 +33,7 @@ classifiers = [
 Homepage = "https://github.com/tkukushkin/aioacme"
 Repository = "https://github.com/tkukushkin/aioacme.git"
 Issues = "https://github.com/tkukushkin/aioacme/issues"
+Documentation = "https://aioacme.readthedocs.io/stable"
 Changelog = "https://github.com/tkukushkin/aioacme/releases"
 
 [tool.setuptools_scm]
