@@ -47,10 +47,11 @@ def pebble_ssl_context(start_pebble, docker_compose_files, docker_services_proje
             'pebble:test/certs/pebble.minica.pem',
             '-',
         ],
-        check=True,
-        stderr=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
+        check=False,
+        capture_output=True,
     )
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.decode('utf-8'))
     with tarfile.TarFile(mode='r', fileobj=io.BytesIO(proc.stdout)) as tar:
         cert = tar.extractfile('pebble.minica.pem').read()
 
