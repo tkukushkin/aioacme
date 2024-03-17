@@ -204,6 +204,7 @@ class Authorization:
 
 class RevocationReason(Enum):
     """Reason to revoke certificate"""
+
     unspecified = 0
     key_compromise = 1
     ca_compromise = 2

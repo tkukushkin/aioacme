@@ -8,7 +8,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx_autodoc_typehints',
-    'myst_parser'
+    'myst_parser',
 ]
 version = release = '.'.join(aioacme.__version_tuple__[:3])
 
