@@ -241,6 +241,7 @@ class Client:
     async def get_account_uri(self) -> str:
         """
         Get current account URI.
+
         :return: URI.
         """
         if self._account_uri is None:
