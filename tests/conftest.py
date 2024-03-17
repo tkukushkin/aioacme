@@ -36,7 +36,8 @@ def pebble_ssl_context(start_pebble, docker_compose_files, docker_services_proje
     # pebble image uses scratch as base image, so we can't use exec to copy the file out
     proc = subprocess.run(
         [
-            'docker-compose',
+            'docker',
+            'compose',
             '--project-directory',
             Path(__file__).parent,
             '-f',
