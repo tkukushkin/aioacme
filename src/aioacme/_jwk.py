@@ -34,7 +34,7 @@ def make_jwk(key: PrivateKeyTypes) -> JWK:
             }
         )
 
-    if isinstance(key, rsa.RSAPrivateKey):
+    if isinstance(key, rsa.RSAPrivateKey):  # pragma: no branch
         rsa_public_numbers = key.public_key().public_numbers()
         return JWK(
             {

@@ -4,6 +4,7 @@ import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from ssl import SSLContext
 from types import TracebackType
 from typing import Any
 
@@ -26,7 +27,6 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self
 
-
 _identifier_serializer = serpyco_rs.Serializer(Identifier)
 _error_serializer = serpyco_rs.Serializer(Error)
 _authorization_serializer = serpyco_rs.Serializer(Authorization)
@@ -43,12 +43,14 @@ class Client:
         account_key: PrivateKeyTypes,
         directory_url: str = LETS_ENCRYPT_STAGING_DIRECTORY,
         account_uri: str | None = None,
+        ssl: SSLContext | bool = True,
     ) -> None:
         """
         Create new ACME client.
         :param account_key: private key for account.
         :param directory_url: URL to get directory.
         :param account_uri: Optional account uri, if not provided, it would be fetched on first request.
+        :param ssl: SSL context.
         """
         self._account_key = account_key
         self._directory_url = directory_url
@@ -58,7 +60,9 @@ class Client:
         self._account_key_jwk_thumbprint = jwk_thumbprint(self._account_key_jwk)
 
         self._directory: _Directory | None = None
-        self._session: aiohttp.ClientSession = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar())
+        self._session: aiohttp.ClientSession = aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=ssl), cookie_jar=aiohttp.DummyCookieJar()
+        )
 
         self._nonces: list[str] = []
         self._get_nonce_lock = asyncio.Lock()
@@ -100,7 +104,7 @@ class Client:
             response_data = await response.json(loads=orjson.loads)
         return _authorization_serializer.load({**response_data, 'uri': authorization_uri})
 
-    def get_authorization_domain(self, domain: str) -> str:
+    def get_dns_challenge_domain(self, domain: str) -> str:
         """
         Generate domain for DNS challenge.
         :param domain: domain.
@@ -224,6 +228,7 @@ class Client:
             },
             key=new_account_key,
             jwk=new_account_key_jwk,
+            add_nonce=False,
         )
         async with self._request(url, data=payload):
             pass
@@ -262,17 +267,20 @@ class Client:
         ) as response:
             self._add_nounce(response)
             if response.status >= 300:
+                if not (await response.read()):
+                    raise AcmeError(Error(type='unknown', detail=''))
                 response_data = await response.json(loads=orjson.loads)
                 raise AcmeError(_error_serializer.load(response_data))
             yield response
 
-    async def _wrap_in_jws(
+    async def _wrap_in_jws(  # noqa: PLR0913
         self,
         *,
         url: str,
         data: Mapping[str, Any] | bytes,
         jwk: JWK | None = None,
         key: PrivateKeyTypes | None = None,
+        add_nonce: bool = True,
     ) -> bytes:
         headers: dict[str, Any] = {'url': url}
         if jwk:
@@ -280,7 +288,8 @@ class Client:
         else:
             headers['kid'] = await self.get_account_uri()
 
-        headers['nonce'] = await self._get_nonce()
+        if add_nonce:
+            headers['nonce'] = await self._get_nonce()
 
         payload = orjson.dumps(data) if not isinstance(data, bytes) else data
         return jws_encode(payload=payload, key=key or self._account_key, headers=headers)
@@ -293,10 +302,7 @@ class Client:
             return self._nonces.pop()
 
     def _add_nounce(self, response: aiohttp.ClientResponse) -> None:
-        header_value = response.headers.get('Replay-Nonce')
-        if not header_value:
-            raise RuntimeError('Replay-Nonce header is missing')
-        self._nonces.append(header_value)
+        self._nonces.append(response.headers['Replay-Nonce'])
 
     async def _get_directory(self) -> '_Directory':
         if self._directory is None:

@@ -11,3 +11,6 @@ source =
 
 [report]
 show_missing = true
+exclude_also =
+  assert_never\(.*\)
+  if TYPE_CHECKING:
