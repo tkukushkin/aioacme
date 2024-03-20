@@ -1,26 +1,13 @@
 services:
   pebble:
     image: ghcr.io/letsencrypt/pebble:latest
-    command: -config test/config/pebble-config.json -strict -dnsserver 10.30.50.3:8053
+    command: -config test/config/pebble-config.json -strict -dnsserver challtestsrv:8053
     ports: [ "14000", "15000" ]
     environment:
       PEBBLE_AUTHZREUSE: '0'
       PEBBLE_VA_NOSLEEP: '1'
       PEBBLE_WFE_NONCEREJECT: '30'
-    networks:
-      acmenet:
-        ipv4_address: 10.30.50.2
   challtestsrv:
     image: ghcr.io/letsencrypt/pebble-challtestsrv:latest
-    command: -defaultIPv6 "" -defaultIPv4 10.30.50.3
+    command: -defaultIPv6 "" -defaultIPv4 127.0.0.1
     ports: [ "8055" ]
-    networks:
-      acmenet:
-        ipv4_address: 10.30.50.3
-networks:
-  acmenet:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 10.30.50.0/24
