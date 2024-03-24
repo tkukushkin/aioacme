@@ -3,24 +3,50 @@ API Reference
 
 .. py:currentmodule:: aioacme
 
+.. py:data:: LETS_ENCRYPT_STAGING_DIRECTORY
+   :annotation: = 'https://acme-staging-v02.api.letsencrypt.org/directory'
+
+   The Let's Encrypt staging directory URL.
+
+
+.. py:data:: LETS_ENCRYPT_DIRECTORY
+   :annotation: = 'https://acme-v02.api.letsencrypt.org/directory'
+
+   The Let's Encrypt directory URL.
+
 .. autoclass:: Client
    :members:
+   :undoc-members:
+   :special-members: __aenter__, __aexit__
 
-.. autoclass:: IdentifierType
+.. autoclass:: IdentifierType()
    :show-inheritance:
 
    .. autoattribute:: dns
-
    .. autoattribute:: ip
 
-.. autoclass:: Identifier
-   :members:
-
-.. autoclass:: Error
-   :members:
-
-.. autoclass:: OrderStatus
+.. autoclass:: AccountStatus()
    :show-inheritance:
+
+   .. autoattribute:: valid
+   .. autoattribute:: deactivated
+   .. autoattribute:: revoked
+
+.. autoclass:: Account()
+   :members:
+   :undoc-members:
+
+.. autoclass:: Identifier()
+   :members:
+   :undoc-members:
+
+.. autoclass:: Error()
+   :members:
+   :undoc-members:
+
+.. autoclass:: OrderStatus()
+   :show-inheritance:
+   :undoc-members:
 
    .. autoattribute:: pending
    .. autoattribute:: ready
@@ -28,29 +54,34 @@ API Reference
    .. autoattribute:: valid
    .. autoattribute:: invalid
 
-.. autoclass:: Order
+.. autoclass:: Order()
    :members:
+   :undoc-members:
 
-.. autoclass:: ChallengeType
+.. autoclass:: ChallengeType()
    :show-inheritance:
+   :undoc-members:
 
    .. autoattribute:: dns01
    .. autoattribute:: http01
    .. autoattribute:: tlsalpn01
 
-.. autoclass:: ChallengeStatus
+.. autoclass:: ChallengeStatus()
    :show-inheritance:
+   :undoc-members:
 
    .. autoattribute:: pending
    .. autoattribute:: processing
    .. autoattribute:: valid
    .. autoattribute:: invalid
 
-.. autoclass:: Challenge
+.. autoclass:: Challenge()
    :members:
+   :undoc-members:
 
-.. autoclass:: AuthorizationStatus
+.. autoclass:: AuthorizationStatus()
    :show-inheritance:
+   :undoc-members:
 
    .. autoattribute:: pending
    .. autoattribute:: valid
@@ -58,11 +89,13 @@ API Reference
    .. autoattribute:: expired
    .. autoattribute:: deactivated
 
-.. autoclass:: Authorization
+.. autoclass:: Authorization()
    :members:
+   :undoc-members:
 
-.. autoclass:: RevocationReason
+.. autoclass:: RevocationReason()
    :show-inheritance:
+   :undoc-members:
 
    .. autoattribute:: unspecified
    .. autoattribute:: key_compromise
@@ -74,3 +107,7 @@ API Reference
    .. autoattribute:: remove_from_crl
    .. autoattribute:: privilege_withdrawn
    .. autoattribute:: aa_compromise
+
+.. autoexception:: AcmeError()
+   :members:
+   :undoc-members:

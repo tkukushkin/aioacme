@@ -5,7 +5,7 @@ from typing import Any
 
 import orjson
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
@@ -24,11 +24,11 @@ def jws_encode(
     headers: Mapping[str, Any],
 ) -> bytes:
     if isinstance(key, ec.EllipticCurvePrivateKey):
-        alg = f'ES{key.curve.key_size}'
-        hash_alg = {256: hashes.SHA256, 384: hashes.SHA384}[key.curve.key_size]()
+        alg = {ec.SECP256R1.name: 'ES256', ec.SECP384R1.name: 'ES384', ec.SECP521R1.name: 'ES512'}[key.curve.name]
     elif isinstance(key, rsa.RSAPrivateKey):
         alg = 'RS256'
-        hash_alg = hashes.SHA256()
+    elif isinstance(key, ed25519.Ed25519PrivateKey):
+        alg = 'EdDSA'
     else:
         assert_never(key)
 
@@ -39,10 +39,17 @@ def jws_encode(
     signing_input = headers_b64 + b'.' + payload_b64
 
     if isinstance(key, rsa.RSAPrivateKey):
-        signature = key.sign(signing_input, PKCS1v15(), hash_alg)
+        signature = key.sign(signing_input, PKCS1v15(), hashes.SHA256())
     elif isinstance(key, ec.EllipticCurvePrivateKey):
+        hash_alg = {
+            ec.SECP256R1.name: hashes.SHA256(),
+            ec.SECP384R1.name: hashes.SHA384(),
+            ec.SECP521R1.name: hashes.SHA512(),
+        }[key.curve.name]
         signature = key.sign(signing_input, ec.ECDSA(hash_alg))
         signature = _der_to_raw_signature(signature, key.curve)
+    elif isinstance(key, ed25519.Ed25519PrivateKey):
+        signature = key.sign(signing_input)
     else:
         assert_never(key)
 
@@ -56,8 +63,7 @@ def jws_encode(
 
 
 def _der_to_raw_signature(der_sig: bytes, curve: ec.EllipticCurve) -> bytes:
-    num_bits = curve.key_size
-    num_bytes = (num_bits + 7) // 8
+    num_bytes = (curve.key_size + 7) // 8
 
     r, s = decode_dss_signature(der_sig)
 

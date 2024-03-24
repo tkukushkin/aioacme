@@ -1,20 +1,74 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import pytest
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 
 import aioacme
 
 
-async def test_get_account_uri(client, pebble_url):
+async def test_get_terms_of_service(client):
     # act
-    account_uri = await client.get_account_uri()
+    result = await client.get_terms_of_service()
 
     # assert
-    assert account_uri.startswith(f'{pebble_url}/my-account')
+    assert result == 'data:text/plain,Do%20what%20thou%20wilt'
+
+
+async def test_get_account__not_registered(client):
+    # act
+    account = await client.get_account()
+
+    # assert
+    assert account == aioacme.Account(uri=mock.ANY, status=aioacme.AccountStatus.valid, orders=mock.ANY)
+
+
+async def test_get_account__already_registered_but_uri_not_provided__return_existing(client):
+    # arrange
+    account = await client.get_account()
+
+    # act
+    async with aioacme.Client(
+        account_key=client.account_key, directory_url=client.directory_url, ssl=False
+    ) as new_client:
+        result = await new_client.get_account()
+
+    # assert
+    assert result == account
+
+
+async def test_get_account__already_registered_and_uri_provided__return_existing(client):
+    # arrange
+    account = await client.get_account()
+
+    # act
+    async with aioacme.Client(
+        account_key=client.account_key, directory_url=client.directory_url, ssl=False, account_uri=account.uri
+    ) as new_client:
+        result = await new_client.get_account()
+
+    # assert
+    assert result == account
+
+
+async def test_update_account__contant(client):
+    # act
+    account = await client.update_account(contact=['mailto:bar@example.com'])
+
+    # assert
+    assert account == aioacme.Account(
+        uri=client.account_uri, status=aioacme.AccountStatus.valid, orders=mock.ANY, contact=['mailto:bar@example.com']
+    )
+
+
+async def test_update_account__deactivate(client):
+    # act
+    account = await client.update_account(status=aioacme.AccountStatus.deactivated)
+
+    # assert
+    assert account == aioacme.Account(uri=client.account_uri, status=aioacme.AccountStatus.deactivated, orders=mock.ANY)
 
 
 async def test_new_order(client, domain, pebble_url):
@@ -32,10 +86,32 @@ async def test_new_order(client, domain, pebble_url):
         status=aioacme.OrderStatus.pending,
         expires=mock.ANY,
         finalize=mock.ANY,
-        not_before=None,
-        not_after=None,
-        error=None,
-        certificate=None,
+    )
+    assert order.uri.startswith(f'{pebble_url}/my-order')
+    assert order.finalize.startswith(f'{pebble_url}/finalize-order')
+    assert isinstance(order.expires, datetime)
+    assert order.authorizations[0].startswith(f'{pebble_url}/authZ')
+
+
+async def test_new_order__with_not_before_and_not_after(client, domain, pebble_url):
+    # arrange
+    identifiers = [aioacme.Identifier(domain)]
+    not_before = datetime.now(timezone.utc)
+    not_after = not_before + timedelta(days=30)
+
+    # act
+    order = await client.new_order(identifiers, not_before=not_before, not_after=not_after)
+
+    # assert
+    assert order == aioacme.Order(
+        uri=mock.ANY,
+        identifiers=identifiers,
+        authorizations=[mock.ANY],
+        status=aioacme.OrderStatus.pending,
+        expires=mock.ANY,
+        finalize=mock.ANY,
+        not_before=not_before,
+        not_after=not_after,
     )
     assert order.uri.startswith(f'{pebble_url}/my-order')
     assert order.finalize.startswith(f'{pebble_url}/finalize-order')
@@ -214,22 +290,24 @@ async def test_integrational_ok(client, domain, csr, add_txt, private_key):
     await client.revoke_certificate(x509.load_pem_x509_certificate(certificate), private_key)
 
 
-async def test_deactivate_account(client, domain):
-    # act
-    await client.deactivate_account()
-
-    # assert
-    with pytest.raises(aioacme.AcmeError) as exc_info:
-        await client.new_order([aioacme.Identifier(domain)])
-
-    assert exc_info.value.error == aioacme.Error(
-        type='urn:ietf:params:acme:error:unauthorized', detail='Account has been deactivated'
-    )
-
-
-async def test_change_key(client, domain):
+@pytest.mark.parametrize(
+    'get_new_key',
+    [
+        pytest.param(lambda: rsa.generate_private_key(public_exponent=65537, key_size=2048), id='RSA_2048'),
+        pytest.param(lambda: rsa.generate_private_key(public_exponent=65537, key_size=4096), id='RSA_4096'),
+        pytest.param(lambda: ec.generate_private_key(ec.SECP256R1()), id='SECP256R1'),
+        pytest.param(lambda: ec.generate_private_key(ec.SECP384R1()), id='SECP384R1'),
+        pytest.param(lambda: ec.generate_private_key(ec.SECP521R1()), id='SECP521R1'),
+        pytest.param(
+            ed25519.Ed25519PrivateKey.generate,
+            marks=[pytest.mark.xfail(reason='Ed25519 is not supported')],
+            id='Ed25519',
+        ),
+    ],
+)
+async def test_change_key(client, domain, get_new_key):
     # arrange
-    new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    new_key = get_new_key()
 
     # act
     await client.change_key(new_key)

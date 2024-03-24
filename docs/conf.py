@@ -7,7 +7,6 @@ author = 'Timofei Kukushkin'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'sphinx_autodoc_typehints',
     'myst_parser',
 ]
 version = release = aioacme.__version__
@@ -22,3 +21,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'cryptography': ('https://cryptography.io/en/latest/', None),
 }
+
+autoclass_content = 'both'
+autodoc_member_order = 'bysource'
+autodoc_preserve_defaults = True

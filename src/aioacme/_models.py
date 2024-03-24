@@ -2,89 +2,116 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Annotated
+
+import dateutil.parser
+from serpyco_rs.metadata import deserialize_with
+
+
+class AccountStatus(Enum):
+    """Account status."""
+
+    valid = 'valid'
+    """Account is active."""
+    deactivated = 'deactivated'
+    """Client requested deactivation of the account."""
+    revoked = 'revoked'
+    """Server revoked the account."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Account:
+    """Account object."""
+
+    uri: str
+    status: AccountStatus
+    contact: Sequence[str] | None = None
+    terms_of_service_agreed: bool | None = None
+    orders: str | None = None
+    """
+    A URL from which a list of orders submitted by this account can be fetched
+    """
+    initial_ip: str | None = None
+    created_at: Annotated[datetime, deserialize_with(dateutil.parser.isoparse)] | None = None
 
 
 class OrderStatus(Enum):
-    """
-    Order objects are created in the "pending" state.  Once all of the
-    authorizations listed in the order object are in the "valid" state,
-    the order transitions to the "ready" state.  The order moves to the
-    "processing" state after the client submits a request to the order's
-    "finalize" URL and the CA begins the issuance process for the
-    certificate.  Once the certificate is issued, the order enters the
-    "valid" state.  If an error occurs at any of these stages, the order
-    moves to the "invalid" state.  The order also moves to the "invalid"
-    state if it expires or one of its authorizations enters a final state
-    other than "valid" ("expired", "revoked", or "deactivated").
-    """
+    """Order status."""
 
     pending = 'pending'
+    """The order is waiting for the client to satisfy authorizations challenges."""
     ready = 'ready'
+    """All authorizations have been satisfied, the order is ready to finalize."""
     processing = 'processing'
+    """The server is issuing the certificate."""
     valid = 'valid'
+    """The certificate has been issued."""
     invalid = 'invalid'
+    """The order has expired or one of its authorizations has failed."""
 
 
 class AuthorizationStatus(Enum):
-    """
-    Authorization objects are created in the "pending" state.  If one of
-    the challenges listed in the authorization transitions to the "valid"
-    state, then the authorization also changes to the "valid" state.  If
-    the client attempts to fulfill a challenge and fails, or if there is
-    an error while the authorization is still pending, then the
-    authorization transitions to the "invalid" state.  Once the
-    authorization is in the "valid" state, it can expire ("expired"), be
-    deactivated by the client ("deactivated"), or revoked by the server ("revoked").
-    """
+    """Authorization status."""
 
     pending = 'pending'
+    """The authorization is waiting to be validated."""
     valid = 'valid'
+    """The authorization has been successfully validated."""
     invalid = 'invalid'
+    """The authorization has not been successfully validated."""
     deactivated = 'deactivated'
+    """The client has deactivated the authorization."""
     expired = 'expired'
+    """The authorization has expired."""
     revoked = 'revoked'
+    """The server has revoked the authorization."""
 
 
 class IdentifierType(Enum):
+    """Identifier type."""
+
     dns = 'dns'
     ip = 'ip'
 
 
 @dataclass(frozen=True, slots=True)
 class Identifier:
+    """Identifier object."""
+
     value: str
-    """Value"""
     type: IdentifierType = IdentifierType.dns
-    """Type"""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Error:
+    """Error object."""
+
     type: str
     """A URI reference to a document with more information about the error."""
     detail: str
     """A short description of the error."""
     identifier: Identifier | None = None
-    subproblems: list['Error'] | None = None
+    subproblems: Sequence['Error'] | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Order:
+    """Order object."""
+
     uri: str
     """URI"""
     identifiers: Sequence[Identifier]
     """An array of identifier objects that the order pertains to."""
-    authorizations: list[str]
+    authorizations: Sequence[str]
     """
     For pending orders, the authorizations that the client needs to complete
-    before the requested certificate can be issued (see Section 7.5),
+    before the requested certificate can be issued,
     including unexpired authorizations that the client has completed in the
     past for identifiers specified in the order. The authorizations required
     are dictated by server policy; there may not be a 1:1 relationship between
     the order identifiers and the authorizations required.  For final orders
     (in the "valid" or "invalid" state), the authorizations that were
-    completed. Each entry is a URL from which an authorization can be fetched
-    with a POST-as-GET request.
+    completed. Each entry is a URL from which an authorization can be fetched.
     """
     status: OrderStatus
     """The status of this order."""
@@ -113,32 +140,30 @@ class Order:
 
 
 class ChallengeType(Enum):
+    """Challenge type."""
+
     dns01 = 'dns-01'
     http01 = 'http-01'
     tlsalpn01 = 'tls-alpn-01'
 
 
 class ChallengeStatus(Enum):
-    """
-    Challenge objects are created in the "pending" state.  They
-    transition to the "processing" state when the client responds to the
-    challenge (see Section 7.5.1) and the server begins attempting to
-    validate that the client has completed the challenge.  Note that
-    within the "processing" state, the server may attempt to validate the
-    challenge multiple times (see Section 8.2).  Likewise, client
-    requests for retries do not cause a state change.  If validation is
-    successful, the challenge moves to the "valid" state; if there is an
-    error, the challenge moves to the "invalid" state.
-    """
+    """Challenge status."""
 
     pending = 'pending'
+    """The challenge is waiting to be validated."""
     processing = 'processing'
+    """The challenge is in the process of being validated."""
     valid = 'valid'
+    """The challenge has been successfully validated."""
     invalid = 'invalid'
+    """The challenge has not been successfully validated."""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Challenge:
+    """Challenge object."""
+
     type: ChallengeType
     """The type of challenge encoded in the object."""
     url: str
@@ -168,6 +193,8 @@ class Challenge:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Authorization:
+    """Authorization object."""
+
     uri: str
     """URI"""
     identifier: Identifier
@@ -203,7 +230,7 @@ class Authorization:
 
 
 class RevocationReason(Enum):
-    """Reason to revoke certificate"""
+    """Reason to revoke certificate."""
 
     unspecified = 0
     key_compromise = 1

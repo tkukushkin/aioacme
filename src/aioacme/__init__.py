@@ -2,6 +2,8 @@ from aioacme._client import Client
 from aioacme._directories import LETS_ENCRYPT_DIRECTORY, LETS_ENCRYPT_STAGING_DIRECTORY
 from aioacme._exceptions import AcmeError
 from aioacme._models import (
+    Account,
+    AccountStatus,
     Authorization,
     AuthorizationStatus,
     Challenge,
@@ -21,6 +23,8 @@ __all__ = [
     'LETS_ENCRYPT_DIRECTORY',
     'LETS_ENCRYPT_STAGING_DIRECTORY',
     'AcmeError',
+    'Account',
+    'AccountStatus',
     'Authorization',
     'AuthorizationStatus',
     'Challenge',

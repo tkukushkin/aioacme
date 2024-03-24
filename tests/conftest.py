@@ -39,12 +39,8 @@ async def pebble_url(docker_services, docker_ip) -> str:
 
 
 @pytest.fixture()
-def account_key() -> ec.EllipticCurvePrivateKey:
-    return ec.generate_private_key(ec.SECP256R1())
-
-
-@pytest.fixture()
-async def client(pebble_url, account_key) -> aioacme.Client:
+async def client(pebble_url) -> aioacme.Client:
+    account_key = ec.generate_private_key(ec.SECP256R1())
     async with aioacme.Client(directory_url=f'{pebble_url}/dir', ssl=False, account_key=account_key) as client:
         yield client
 

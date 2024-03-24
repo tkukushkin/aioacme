@@ -15,6 +15,7 @@ dependencies = [
   "typing-extensions; python_version<'3.11'",
   "orjson",
   "serpyco-rs",
+  "python-dateutil",
 ]
 license = { file = "LICENSE" }
 classifiers = [
