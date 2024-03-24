@@ -19,12 +19,6 @@ API Reference
    :undoc-members:
    :special-members: __aenter__, __aexit__
 
-.. autoclass:: IdentifierType()
-   :show-inheritance:
-
-   .. autoattribute:: dns
-   .. autoattribute:: ip
-
 .. autoclass:: AccountStatus()
    :show-inheritance:
 
@@ -35,6 +29,12 @@ API Reference
 .. autoclass:: Account()
    :members:
    :undoc-members:
+
+.. autoclass:: IdentifierType()
+   :show-inheritance:
+
+   .. autoattribute:: dns
+   .. autoattribute:: ip
 
 .. autoclass:: Identifier()
    :members:
