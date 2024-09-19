@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import sys
+from base64 import b64decode
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -13,13 +14,23 @@ import aiohttp
 import orjson
 import serpyco_rs
 from cryptography import x509
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, hmac, serialization
 
 from aioacme._directories import LETS_ENCRYPT_STAGING_DIRECTORY
 from aioacme._exceptions import AcmeError
 from aioacme._jwk import JWK, jwk_thumbprint, make_jwk
 from aioacme._jws import jws_encode
-from aioacme._models import Account, AccountStatus, Authorization, Challenge, Error, Identifier, Order, RevocationReason
+from aioacme._models import (
+    Account,
+    AccountStatus,
+    Authorization,
+    Challenge,
+    Error,
+    ExternalAccountBinding,
+    Identifier,
+    Order,
+    RevocationReason,
+)
 from aioacme._types import PrivateKeyTypes
 from aioacme._utils import b64_encode
 
@@ -40,6 +51,7 @@ class Client:
     account_key: PrivateKeyTypes
     directory_url: Final[str]
     account_uri: str | None
+    external_account_binding: ExternalAccountBinding | None
 
     def __init__(
         self,
@@ -47,6 +59,7 @@ class Client:
         account_key: PrivateKeyTypes,
         directory_url: str = LETS_ENCRYPT_STAGING_DIRECTORY,
         account_uri: str | None = None,
+        external_account_binding: ExternalAccountBinding | None = None,
         ssl: SSLContext | bool = True,
     ) -> None:
         """
@@ -62,6 +75,7 @@ class Client:
         self.account_key = account_key
         self.directory_url = directory_url
         self.account_uri = account_uri
+        self.external_account_binding = external_account_binding
 
         self._account_key_jwk = make_jwk(self.account_key)
         self._account_key_jwk_thumbprint = jwk_thumbprint(self._account_key_jwk)
@@ -88,6 +102,16 @@ class Client:
             url = (await self._get_directory()).new_account
             data = {'termsOfServiceAgreed': True}
             jwk = self._account_key_jwk
+            if self.external_account_binding:
+                mac_key = self.external_account_binding.mac_key
+                mac_key = b64decode(mac_key) if isinstance(mac_key, str) else mac_key
+                data['externalAccountBinding'] = orjson.loads(
+                    jws_encode(
+                        key=hmac.HMAC(mac_key, hashes.SHA256()),
+                        headers={'kid': self.external_account_binding.kid, 'url': url},
+                        payload=orjson.dumps(jwk),
+                    )
+                )
         else:
             url = self.account_uri
             data = b''
@@ -321,7 +345,7 @@ class Client:
             async with self._request(url, data=data, jwk=jwk, key=key) as retried_response:
                 yield retried_response
 
-    async def _wrap_in_jws(  # noqa: PLR0913
+    async def _wrap_in_jws(
         self,
         *,
         url: str,

@@ -167,6 +167,12 @@ async def test_get_authorization(client, domain, pebble_url):
             token=mock.ANY,
         ),
         aioacme.Challenge(
+            type=aioacme.ChallengeType.dnsaccount01,
+            url=mock.ANY,
+            status=aioacme.ChallengeStatus.pending,
+            token=mock.ANY,
+        ),
+        aioacme.Challenge(
             type=aioacme.ChallengeType.http01,
             url=mock.ANY,
             status=aioacme.ChallengeStatus.pending,
@@ -288,6 +294,23 @@ async def test_integrational_ok(client, domain, csr, add_txt, private_key):
     assert certificate.startswith(b'---')
 
     await client.revoke_certificate(x509.load_pem_x509_certificate(certificate), private_key)
+
+
+async def test_get_account__with_eab__ok(pebble_eab_url):
+    account_key = ec.generate_private_key(ec.SECP256R1())
+    async with aioacme.Client(
+        directory_url=f'{pebble_eab_url}/dir',
+        ssl=False,
+        account_key=account_key,
+        # https://github.com/letsencrypt/pebble/blob/v2.6.0/test/config/pebble-config-external-account-bindings.json
+        external_account_binding=aioacme.ExternalAccountBinding(
+            kid='kid-1',
+            mac_key='zWNDZM6eQGHWpSRTPal5eIUYFTu7EajVIoguysqZ9wG44nMEtx3MUAsUDkMTQ12W',
+        ),
+    ) as client:
+        account = await client.get_account()
+
+    assert account == aioacme.Account(uri=mock.ANY, status=aioacme.AccountStatus.valid, orders=mock.ANY)
 
 
 @pytest.mark.parametrize(

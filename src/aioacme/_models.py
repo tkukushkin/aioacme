@@ -8,6 +8,16 @@ import dateutil.parser
 from serpyco_rs.metadata import deserialize_with
 
 
+@dataclass
+class ExternalAccountBinding:
+    """External Account Binding credentials."""
+
+    kid: str
+    """Key ID."""
+    mac_key: bytes | str
+    """MAC key (:py:class:`str` if it's base64 encoded)."""
+
+
 class AccountStatus(Enum):
     """Account status."""
 
@@ -143,6 +153,7 @@ class ChallengeType(Enum):
     """Challenge type."""
 
     dns01 = 'dns-01'
+    dnsaccount01 = 'dns-account-01'
     http01 = 'http-01'
     tlsalpn01 = 'tls-alpn-01'
 

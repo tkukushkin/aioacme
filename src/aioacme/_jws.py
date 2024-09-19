@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import orjson
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, hmac
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
@@ -20,7 +20,7 @@ else:
 
 def jws_encode(
     payload: bytes,
-    key: PrivateKeyTypes,
+    key: PrivateKeyTypes | hmac.HMAC,
     headers: Mapping[str, Any],
 ) -> bytes:
     if isinstance(key, ec.EllipticCurvePrivateKey):
@@ -29,6 +29,8 @@ def jws_encode(
         alg = 'RS256'
     elif isinstance(key, ed25519.Ed25519PrivateKey):
         alg = 'EdDSA'
+    elif isinstance(key, hmac.HMAC):
+        alg = f'HS{key.algorithm.digest_size * 8}'
     else:
         assert_never(key)
 
@@ -50,6 +52,11 @@ def jws_encode(
         signature = _der_to_raw_signature(signature, key.curve)
     elif isinstance(key, ed25519.Ed25519PrivateKey):
         signature = key.sign(signing_input)
+    elif isinstance(key, hmac.HMAC):
+        key = key.copy()
+        key.update(signing_input)
+        signature = key.finalize()
+
     else:
         assert_never(key)
 

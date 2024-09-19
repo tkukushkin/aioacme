@@ -14,6 +14,12 @@ API Reference
 
    The Let's Encrypt directory URL.
 
+
+.. py:data:: ZEROSSL_DIRECTORY
+   :annotation: = 'https://acme.zerossl.com/v2/DV90'
+
+   ZeroSSL directory URL.
+
 .. autoclass:: Client
    :members:
    :undoc-members:
@@ -63,6 +69,7 @@ API Reference
    :undoc-members:
 
    .. autoattribute:: dns01
+   .. autoattribute:: dnsaccount01
    .. autoattribute:: http01
    .. autoattribute:: tlsalpn01
 
@@ -107,6 +114,10 @@ API Reference
    .. autoattribute:: remove_from_crl
    .. autoattribute:: privilege_withdrawn
    .. autoattribute:: aa_compromise
+
+.. autoclass:: ExternalAccountBinding()
+   :members:
+   :undoc-members:
 
 .. autoexception:: AcmeError()
    :members:

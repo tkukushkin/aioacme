@@ -6,6 +6,7 @@ import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from lovely.pytest.docker.compose import Services
 
 import aioacme
 
@@ -18,9 +19,18 @@ def event_loop():
 
 
 @pytest.fixture(scope='session')
-async def pebble_url(docker_services, docker_ip) -> str:
-    docker_services.start('pebble')
-    port = docker_services.port_for('pebble', 14000)
+async def pebble_url(docker_services: Services, docker_ip: str) -> str:
+    return await _get_pebble_url(docker_services, docker_ip, 'pebble')
+
+
+@pytest.fixture(scope='session')
+async def pebble_eab_url(docker_services: Services, docker_ip: str) -> str:
+    return await _get_pebble_url(docker_services, docker_ip, 'pebble-eab')
+
+
+async def _get_pebble_url(docker_services: Services, docker_ip: str, name: str) -> str:
+    docker_services.start(name)
+    port = docker_services.port_for(name, 14000)
     url = f'https://{docker_ip}:{port}'
 
     # wait for pebble to be ready
@@ -34,8 +44,7 @@ async def pebble_url(docker_services, docker_ip) -> str:
                 await asyncio.sleep(0.1)
         else:
             raise TimeoutError from last_exc
-
-    yield url
+    return url
 
 
 @pytest.fixture()

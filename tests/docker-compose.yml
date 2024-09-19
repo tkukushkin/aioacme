@@ -1,8 +1,16 @@
 services:
   pebble:
-    image: ghcr.io/letsencrypt/pebble:latest
+    image: ghcr.io/letsencrypt/pebble:2.6.0
     command: -config test/config/pebble-config.json -strict -dnsserver challtestsrv:8053
-    ports: [ "14000", "15000" ]
+    ports: [ "14000" ]
+    environment:
+      PEBBLE_AUTHZREUSE: '0'
+      PEBBLE_VA_NOSLEEP: '1'
+      PEBBLE_WFE_NONCEREJECT: '30'
+  pebble-eab:  # with External Account Binding
+    image: ghcr.io/letsencrypt/pebble:2.6.0
+    command: -config test/config/pebble-config-external-account-bindings.json -strict -dnsserver challtestsrv:8053
+    ports: [ "14000" ]
     environment:
       PEBBLE_AUTHZREUSE: '0'
       PEBBLE_VA_NOSLEEP: '1'

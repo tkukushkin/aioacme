@@ -36,6 +36,7 @@ ignore = [
     "PLR2004", # magic-value-comparison
     "TRY002", # raise-vanilla-class
     "TRY003", # raise-vanilla-args
+    "PLR0913", # too-many-arguments
 ]
 
 [lint.per-file-ignores]
