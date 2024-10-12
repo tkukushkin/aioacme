@@ -17,6 +17,13 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
+_EC_ALGS: Mapping[type[ec.EllipticCurve], str] = {ec.SECP256R1: 'ES256', ec.SECP384R1: 'ES384', ec.SECP521R1: 'ES512'}
+_EC_HASHES: Mapping[type[ec.EllipticCurve], hashes.HashAlgorithm] = {
+    ec.SECP256R1: hashes.SHA256(),
+    ec.SECP384R1: hashes.SHA384(),
+    ec.SECP521R1: hashes.SHA512(),
+}
+
 
 def jws_encode(
     payload: bytes,
@@ -24,7 +31,7 @@ def jws_encode(
     headers: Mapping[str, Any],
 ) -> bytes:
     if isinstance(key, ec.EllipticCurvePrivateKey):
-        alg = {ec.SECP256R1.name: 'ES256', ec.SECP384R1.name: 'ES384', ec.SECP521R1.name: 'ES512'}[key.curve.name]
+        alg = _EC_ALGS[type(key.curve)]
     elif isinstance(key, rsa.RSAPrivateKey):
         alg = 'RS256'
     elif isinstance(key, ed25519.Ed25519PrivateKey):
@@ -43,11 +50,7 @@ def jws_encode(
     if isinstance(key, rsa.RSAPrivateKey):
         signature = key.sign(signing_input, PKCS1v15(), hashes.SHA256())
     elif isinstance(key, ec.EllipticCurvePrivateKey):
-        hash_alg = {
-            ec.SECP256R1.name: hashes.SHA256(),
-            ec.SECP384R1.name: hashes.SHA384(),
-            ec.SECP521R1.name: hashes.SHA512(),
-        }[key.curve.name]
+        hash_alg = _EC_HASHES[type(key.curve)]
         signature = key.sign(signing_input, ec.ECDSA(hash_alg))
         signature = _der_to_raw_signature(signature, key.curve)
     elif isinstance(key, ed25519.Ed25519PrivateKey):
@@ -56,7 +59,6 @@ def jws_encode(
         key = key.copy()
         key.update(signing_input)
         signature = key.finalize()
-
     else:
         assert_never(key)
 

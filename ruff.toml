@@ -24,6 +24,7 @@ select = [
     "RSE", # flake8-raise
     "RET", # flake8-return
     "SIM", # flake8-simplify
+    "TID",  # flake8-tidy-imports
     "PTH", # flake8-use-pathlib
     "PGH", # pygrep-hooks
     "PL", # Pylint
@@ -50,6 +51,10 @@ inline-quotes = "single"
 [lint.isort]
 combine-as-imports = true
 no-lines-before = ["local-folder"]
+
+[lint.flake8-tidy-imports.banned-api]
+"asyncio".msg = "Use anyio instead."
+"trio".msg = "Use anyio instead."
 
 [format]
 quote-style = "single"

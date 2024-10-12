@@ -1,7 +1,7 @@
-import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest import mock
 
+import anyio
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
@@ -215,7 +215,7 @@ async def test_answer_challenge__invalid_record_value__challenge_error(client, d
     challenge = await client.answer_challenge(challenge.url)
     assert challenge.status is aioacme.ChallengeStatus.processing
 
-    await asyncio.sleep(0.5)
+    await anyio.sleep(0.5)
 
     authorization = await client.get_authorization(authorization.uri)
     assert authorization.status is aioacme.AuthorizationStatus.invalid
@@ -241,7 +241,7 @@ async def test_deactivate_authorization(client, domain, add_txt):
     challenge = await client.answer_challenge(challenge.url)
     assert challenge.status is aioacme.ChallengeStatus.processing
 
-    await asyncio.sleep(0.5)
+    await anyio.sleep(0.5)
 
     authorization = await client.get_authorization(authorization.uri)
     assert authorization.status is aioacme.AuthorizationStatus.valid
@@ -264,7 +264,7 @@ async def test_integrational_ok(client, domain, csr, add_txt, private_key):
     challenge = await client.answer_challenge(challenge.url)
     assert challenge.status is aioacme.ChallengeStatus.processing
 
-    await asyncio.sleep(0.5)
+    await anyio.sleep(0.5)
 
     authorization = await client.get_authorization(authorization.uri)
     assert authorization.status is aioacme.AuthorizationStatus.valid
@@ -285,7 +285,7 @@ async def test_integrational_ok(client, domain, csr, add_txt, private_key):
     order = await client.finalize_order(order.finalize, csr)
     assert order.status is aioacme.OrderStatus.processing
 
-    await asyncio.sleep(0.5)
+    await anyio.sleep(0.5)
     order = await client.get_order(order.uri)
     assert order.status is aioacme.OrderStatus.valid
 

@@ -10,7 +10,8 @@ authors = [{ name = "Timofei Kukushkin", email = "tima@kukushkin.me" }]
 description = "Async ACME client implementation"
 readme = "README.md"
 dependencies = [
-  "aiohttp",
+  "anyio",
+  "httpx",
   "cryptography",
   "typing-extensions; python_version<'3.11'",
   "orjson",
@@ -28,6 +29,8 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Software Development :: Libraries :: Python Modules",
+  "Framework :: AsyncIO",
+  "Framework :: Trio",
 ]
 
 [project.urls]

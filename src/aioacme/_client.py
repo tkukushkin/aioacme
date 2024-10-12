@@ -1,16 +1,15 @@
-import asyncio
 import hashlib
 import sys
 from base64 import b64decode
-from collections.abc import AsyncIterator, Mapping, Sequence
-from contextlib import asynccontextmanager
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from ssl import SSLContext
 from types import TracebackType
 from typing import Any, Final, Literal
 
-import aiohttp
+import anyio
+import httpx
 import orjson
 import serpyco_rs
 from cryptography import x509
@@ -81,12 +80,10 @@ class Client:
         self._account_key_jwk_thumbprint = jwk_thumbprint(self._account_key_jwk)
 
         self._directory: _Directory | None = None
-        self._session: aiohttp.ClientSession = aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(ssl=ssl), cookie_jar=aiohttp.DummyCookieJar()
-        )
+        self._client = httpx.AsyncClient(verify=ssl)
 
         self._nonces: list[str] = []
-        self._get_nonce_lock = asyncio.Lock()
+        self._get_nonce_lock = anyio.Lock()
 
     async def get_terms_of_service(self) -> str | None:
         return (await self._get_directory()).terms_of_service
@@ -117,8 +114,8 @@ class Client:
             data = b''
             jwk = None
 
-        async with self._request(url=url, data=data, jwk=jwk) as response:
-            response_data = await response.json(loads=orjson.loads)
+        response = await self._request(url=url, data=data, jwk=jwk)
+        response_data = orjson.loads(response.content)
 
         account = _account_serializer.load({**response_data, 'uri': self.account_uri or response.headers['Location']})
         self.account_uri = account.uri
@@ -139,9 +136,8 @@ class Client:
             data['contact'] = contact
         if status is not None:
             data['status'] = status.value
-        async with self._request(url=uri, data=data) as response:
-            response_data = await response.json(loads=orjson.loads)
-
+        response = await self._request(url=uri, data=data)
+        response_data = orjson.loads(response.content)
         return _account_serializer.load({**response_data, 'uri': uri})
 
     async def new_order(
@@ -166,8 +162,8 @@ class Client:
         if not_after is not None:
             data['notAfter'] = not_after.isoformat()
 
-        async with self._request(url, data=data) as response:
-            response_data = await response.json(loads=orjson.loads)
+        response = await self._request(url, data=data)
+        response_data = orjson.loads(response.content)
 
         return _order_serializer.load({**response_data, 'uri': response.headers['Location']})
 
@@ -177,8 +173,8 @@ class Client:
 
         :param order_uri: order URI.
         """
-        async with self._request(order_uri) as response:
-            response_data = await response.json(loads=orjson.loads)
+        response = await self._request(order_uri)
+        response_data = orjson.loads(response.content)
         return _order_serializer.load({**response_data, 'uri': order_uri})
 
     async def get_authorization(self, authorization_uri: str) -> Authorization:
@@ -187,8 +183,8 @@ class Client:
 
         :param authorization_uri: authorization URI.
         """
-        async with self._request(authorization_uri) as response:
-            response_data = await response.json(loads=orjson.loads)
+        response = await self._request(authorization_uri)
+        response_data = orjson.loads(response.content)
         return _authorization_serializer.load({**response_data, 'uri': authorization_uri})
 
     def get_dns_challenge_domain(self, domain: str) -> str:
@@ -217,8 +213,8 @@ class Client:
 
         :param url: challenge url.
         """
-        async with self._request(url, data={}) as response:
-            response_data = await response.json(loads=orjson.loads)
+        response = await self._request(url, data={})
+        response_data = orjson.loads(response.content)
         return _challenge_serializer.load(response_data)
 
     async def deactivate_authorization(self, uri: str) -> Authorization:
@@ -229,8 +225,8 @@ class Client:
 
         :param uri: authorization URI.
         """
-        async with self._request(uri, data={'status': 'deactivated'}) as response:
-            response_data = await response.json(loads=orjson.loads)
+        response = await self._request(uri, data={'status': 'deactivated'})
+        response_data = orjson.loads(response.content)
         return _authorization_serializer.load({**response_data, 'uri': uri})
 
     async def finalize_order(self, finalize: str, csr: x509.CertificateSigningRequest) -> Order:
@@ -240,11 +236,11 @@ class Client:
         :param finalize: finalize uri.
         :param csr: CSR.
         """
-        async with self._request(
+        response = await self._request(
             finalize,
             data={'csr': b64_encode(csr.public_bytes(serialization.Encoding.DER)).decode('ascii')},
-        ) as response:
-            response_data = await response.json(loads=orjson.loads)
+        )
+        response_data = orjson.loads(response.content)
         return _order_serializer.load({**response_data, 'uri': response.headers['Location']})
 
     async def get_certificate(self, certificate: str) -> bytes:
@@ -253,8 +249,8 @@ class Client:
 
         :param certificate: certificate URL.
         """
-        async with self._request(certificate) as response:
-            return await response.read()
+        response = await self._request(certificate)
+        return response.content
 
     async def revoke_certificate(
         self,
@@ -271,7 +267,7 @@ class Client:
         :param key: private key, if you want to revoke certificate without account key.
         :param reason: reason.
         """
-        async with self._request(
+        await self._request(
             (await self._get_directory()).revoke_cert,
             data={
                 'certificate': b64_encode(certificate.public_bytes(serialization.Encoding.DER)).decode('ascii'),
@@ -279,8 +275,7 @@ class Client:
             },
             jwk=make_jwk(key) if key else None,
             key=key,
-        ):
-            pass
+        )
 
     async def change_key(self, new_account_key: PrivateKeyTypes) -> None:
         """
@@ -304,8 +299,7 @@ class Client:
             jwk=new_account_key_jwk,
             add_nonce=False,
         )
-        async with self._request(url, data=payload):
-            pass
+        await self._request(url, data=payload)
         self.account_key = new_account_key
         self._account_key_jwk = new_account_key_jwk
         self._account_key_jwk_thumbprint = jwk_thumbprint(new_account_key_jwk)
@@ -313,7 +307,6 @@ class Client:
     async def _get_account_uri(self) -> str:
         return self.account_uri or (await self.get_account()).uri
 
-    @asynccontextmanager
     async def _request(
         self,
         url: str,
@@ -321,29 +314,30 @@ class Client:
         data: Mapping[str, Any] | bytes = b'',
         jwk: JWK | None = None,
         key: PrivateKeyTypes | None = None,
-    ) -> AsyncIterator[aiohttp.ClientResponse]:
-        async with self._session.post(
+    ) -> httpx.Response:
+        response = await self._client.post(
             url,
-            data=await self._wrap_in_jws(url=url, data=data, jwk=jwk, key=key),
+            content=await self._wrap_in_jws(url=url, data=data, jwk=jwk, key=key),
             headers={'Content-Type': 'application/jose+json'},
-        ) as response:
-            self._add_nounce(response)
+        )
 
-            if response.status < 300:
-                yield response
-                return
+        self._add_nounce(response)
 
-            try:
-                error = _error_serializer.load(await response.json(loads=orjson.loads))
-            except aiohttp.ContentTypeError:
-                error = Error(type='unknown', detail='')
+        if response.status_code < 300:
+            return response
 
-            if error.type != 'urn:ietf:params:acme:error:badNonce':
-                raise AcmeError(error)
+        try:
+            response_data = orjson.loads(response.content)
+        except orjson.JSONDecodeError:
+            error = Error(type='unknown', detail=response.text)
+        else:
+            error = _error_serializer.load(response_data)
 
-            # retry bad nonce
-            async with self._request(url, data=data, jwk=jwk, key=key) as retried_response:
-                yield retried_response
+        if error.type != 'urn:ietf:params:acme:error:badNonce':
+            raise AcmeError(error)
+
+        # retry bad nonce
+        return await self._request(url, data=data, jwk=jwk, key=key)
 
     async def _wrap_in_jws(
         self,
@@ -369,18 +363,18 @@ class Client:
     async def _get_nonce(self) -> str:
         async with self._get_nonce_lock:
             if not self._nonces:
-                async with self._session.head((await self._get_directory()).new_nonce) as response:
-                    self._nonces.append(response.headers['Replay-Nonce'])
+                response = await self._client.head((await self._get_directory()).new_nonce)
+                self._add_nounce(response)
             return self._nonces.pop()
 
-    def _add_nounce(self, response: aiohttp.ClientResponse) -> None:
+    def _add_nounce(self, response: httpx.Response) -> None:
         self._nonces.append(response.headers['Replay-Nonce'])
 
     async def _get_directory(self) -> '_Directory':
         if self._directory is None:
-            async with self._session.get(self.directory_url) as response:
-                response_data = await response.json(loads=orjson.loads)
-
+            response = await self._client.get(self.directory_url)
+            response.raise_for_status()
+            response_data = orjson.loads(response.content)
             self._directory = _Directory(
                 new_account=response_data['newAccount'],
                 new_nonce=response_data['newNonce'],
@@ -393,7 +387,7 @@ class Client:
         return self._directory
 
     async def close(self) -> None:
-        await self._session.close()
+        await self._client.aclose()
 
     async def __aenter__(self) -> Self:
         return self
@@ -401,7 +395,8 @@ class Client:
     async def __aexit__(
         self, exc_type: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None
     ) -> None:
-        await asyncio.shield(self.close())
+        with anyio.CancelScope(shield=True):
+            await self.close()
 
 
 @dataclass(frozen=True, slots=True)

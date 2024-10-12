@@ -1,4 +1,3 @@
-mypy
+-r tests.txt
 pyright
 ruff
-types-python-dateutil

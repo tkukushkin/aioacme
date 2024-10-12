@@ -1,7 +1,8 @@
-import asyncio
+import ssl
 import uuid
 
-import aiohttp
+import anyio
+import httpx
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
@@ -11,11 +12,9 @@ from lovely.pytest.docker.compose import Services
 import aioacme
 
 
-@pytest.fixture(scope='session')
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+@pytest.fixture(autouse=True, scope='session', params=['asyncio', 'trio'])
+def anyio_backend(request) -> str:
+    return request.param
 
 
 @pytest.fixture(scope='session')
@@ -34,21 +33,23 @@ async def _get_pebble_url(docker_services: Services, docker_ip: str, name: str) 
     url = f'https://{docker_ip}:{port}'
 
     # wait for pebble to be ready
-    async with aiohttp.ClientSession() as session:
+    last_exc = None
+    async with httpx.AsyncClient(verify=False) as client:
         for _ in range(100):
             try:
-                async with session.get(url, ssl=False):
-                    break
-            except aiohttp.ClientError as exc:
+                await client.get(url)
+            except (httpx.HTTPError, ssl.SSLZeroReturnError) as exc:
                 last_exc = exc
-                await asyncio.sleep(0.1)
+                await anyio.sleep(0.1)
+            else:
+                break
         else:
             raise TimeoutError from last_exc
     return url
 
 
 @pytest.fixture()
-async def client(pebble_url) -> aioacme.Client:
+async def client(pebble_url):
     account_key = ec.generate_private_key(ec.SECP256R1())
     async with aioacme.Client(directory_url=f'{pebble_url}/dir', ssl=False, account_key=account_key) as client:
         yield client
@@ -80,9 +81,10 @@ def add_txt_fixture(docker_services, docker_ip):
     port = docker_services.wait_for_service('challtestsrv', 8055)
 
     async def add_txt(domain: str, value: str) -> None:
-        async with aiohttp.request(
-            'POST', f'http://{docker_ip}:{port}/set-txt', json={'host': domain + '.', 'value': value}
-        ) as response:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f'http://{docker_ip}:{port}/set-txt', json={'host': domain + '.', 'value': value}
+            )
             response.raise_for_status()
 
     return add_txt
