@@ -18,13 +18,13 @@ jobs:
         python-version: [ '3.10', '3.11', '3.12', '3.13' ]
         include:
         - python-version: '3.10'
-          tox-env: tests-py310
+          tox-env: test-py310
         - python-version: '3.11'
-          tox-env: tests-py311
+          tox-env: test-py311
         - python-version: '3.12'
-          tox-env: tests-py312
+          tox-env: test-py312
         - python-version: '3.13'
-          tox-env: tests-py313
+          tox-env: test-py313
     steps:
     - name: Checkout
       uses: actions/checkout@v4

@@ -20,17 +20,17 @@ from aioacme._models import (
 from aioacme._version import __version__, __version_tuple__
 
 __all__ = [
-    'Client',
     'LETS_ENCRYPT_DIRECTORY',
     'LETS_ENCRYPT_STAGING_DIRECTORY',
-    'AcmeError',
     'Account',
     'AccountStatus',
+    'AcmeError',
     'Authorization',
     'AuthorizationStatus',
     'Challenge',
     'ChallengeStatus',
     'ChallengeType',
+    'Client',
     'Error',
     'ExternalAccountBinding',
     'Identifier',

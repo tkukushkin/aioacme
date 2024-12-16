@@ -34,6 +34,35 @@ classifiers = [
   "Framework :: Trio",
 ]
 
+[dependency-groups]
+test = [
+  "pytest",
+  "pytest-anyio",
+  "pytest-cov",
+  "lovely-pytest-docker",
+  "trio",
+]
+lint = [
+  { include-group = "test" },
+  "pyright",
+  "ruff",
+]
+docs = [
+  "furo",
+  "sphinx",
+  "sphinx-autodoc-typehints",
+  "myst-parser",
+]
+dev = [
+  { include-group = "test" },
+  { include-group = "lint" },
+  { include-group = "docs" },
+  "pytest-sugar",
+  "tox",
+  "tox-uv",
+  "uv",
+]
+
 [project.urls]
 Homepage = "https://github.com/tkukushkin/aioacme"
 Repository = "https://github.com/tkukushkin/aioacme.git"

@@ -1,3 +1,0 @@
--r tests.txt
-pyright
-ruff

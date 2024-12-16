@@ -80,5 +80,5 @@ def _der_to_raw_signature(der_sig: bytes, curve: ec.EllipticCurve) -> bytes:
 
 
 def _number_to_bytes(num: int, num_bytes: int) -> bytes:
-    padded_hex = '%0*x' % (2 * num_bytes, num)
+    padded_hex = f'{num:0{2 * num_bytes}x}'
     return binascii.a2b_hex(padded_hex.encode('ascii'))

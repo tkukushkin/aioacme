@@ -3,3 +3,4 @@
 __pycache__/
 docs/_build
 src/aioacme/_version.py
+uv.lock
