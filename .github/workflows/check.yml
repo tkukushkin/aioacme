@@ -40,7 +40,7 @@ jobs:
       run: python -m pip install tox tox-uv
 
     - name: Setup environment
-      run: tox -vv --notest -e ${{ matrix.tox-env }},coverage
+      run: tox -v --notest -e ${{ matrix.tox-env }},coverage
 
     - name: Run tests
       run: tox --skip-pkg-install -e ${{ matrix.tox-env }},coverage
@@ -70,7 +70,7 @@ jobs:
       run: python -m pip install tox tox-uv
 
     - name: Setup environment
-      run: tox -vv --notest -e lint
+      run: tox -v --notest -e lint
 
     - name: Run linters
       run: tox --skip-pkg-install -e lint

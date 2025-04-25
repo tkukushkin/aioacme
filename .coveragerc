@@ -3,6 +3,7 @@ branch = true
 relative_files = true
 source =
   aioacme
+context = $COVERAGE_CONTEXT
 
 [paths]
 source =
