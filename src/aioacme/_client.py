@@ -80,7 +80,7 @@ class Client:
         self._account_key_jwk_thumbprint = jwk_thumbprint(self._account_key_jwk)
 
         self._directory: _Directory | None = None
-        self._client = httpx.AsyncClient(verify=ssl)
+        self._client = httpx.AsyncClient(verify=ssl, timeout=httpx.Timeout(300))
 
         self._nonces: list[str] = []
         self._get_nonce_lock = anyio.Lock()
