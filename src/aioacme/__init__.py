@@ -1,6 +1,6 @@
 from aioacme._client import Client
 from aioacme._directories import LETS_ENCRYPT_DIRECTORY, LETS_ENCRYPT_STAGING_DIRECTORY
-from aioacme._exceptions import AcmeError
+from aioacme._exceptions import AcmeError, RateLimitedError
 from aioacme._models import (
     Account,
     AccountStatus,
@@ -37,6 +37,7 @@ __all__ = [
     'IdentifierType',
     'Order',
     'OrderStatus',
+    'RateLimitedError',
     'RevocationReason',
     '__version__',
     '__version_tuple__',

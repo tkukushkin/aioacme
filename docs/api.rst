@@ -122,3 +122,8 @@ API Reference
 .. autoexception:: AcmeError()
    :members:
    :undoc-members:
+
+.. autoexception:: RateLimitedError()
+   :show-inheritance:
+   :members:
+   :undoc-members:

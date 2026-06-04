@@ -3,7 +3,7 @@ import sys
 from base64 import b64decode
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from ssl import SSLContext
 from types import TracebackType
 from typing import Any, Final, Literal
@@ -16,7 +16,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, hmac, serialization
 
 from aioacme._directories import LETS_ENCRYPT_STAGING_DIRECTORY
-from aioacme._exceptions import AcmeError
+from aioacme._exceptions import AcmeError, RateLimitedError
 from aioacme._jwk import JWK, jwk_thumbprint, make_jwk
 from aioacme._jws import jws_encode
 from aioacme._models import (
@@ -31,7 +31,7 @@ from aioacme._models import (
     RevocationReason,
 )
 from aioacme._types import PrivateKeyTypes
-from aioacme._utils import b64_encode
+from aioacme._utils import b64_encode, parse_retry_after
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -333,11 +333,17 @@ class Client:
         else:
             error = _error_serializer.load(response_data)
 
-        if error.type != 'urn:ietf:params:acme:error:badNonce':
-            raise AcmeError(error)
+        if error.type == 'urn:ietf:params:acme:error:badNonce':
+            # retry bad nonce
+            return await self._request(url, data=data, jwk=jwk, key=key)
 
-        # retry bad nonce
-        return await self._request(url, data=data, jwk=jwk, key=key)
+        if error.type == 'urn:ietf:params:acme:error:rateLimited':
+            raise RateLimitedError(
+                error,
+                retry_after=parse_retry_after(response.headers.get('Retry-After'), now=datetime.now(timezone.utc)),
+            )
+
+        raise AcmeError(error)
 
     async def _wrap_in_jws(
         self,

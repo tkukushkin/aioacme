@@ -29,6 +29,7 @@ dev = [
     { name = "pytest-anyio" },
     { name = "pytest-cov" },
     { name = "pytest-sugar" },
+    { name = "respx" },
     { name = "ruff" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -53,6 +54,7 @@ lint = [
     { name = "pytest" },
     { name = "pytest-anyio" },
     { name = "pytest-cov" },
+    { name = "respx" },
     { name = "ruff" },
     { name = "trio" },
 ]
@@ -61,6 +63,7 @@ test = [
     { name = "pytest" },
     { name = "pytest-anyio" },
     { name = "pytest-cov" },
+    { name = "respx" },
     { name = "trio" },
 ]
 
@@ -85,6 +88,7 @@ dev = [
     { name = "pytest-anyio" },
     { name = "pytest-cov" },
     { name = "pytest-sugar" },
+    { name = "respx" },
     { name = "ruff" },
     { name = "sphinx" },
     { name = "sphinx-autodoc-typehints" },
@@ -105,6 +109,7 @@ lint = [
     { name = "pytest" },
     { name = "pytest-anyio" },
     { name = "pytest-cov" },
+    { name = "respx" },
     { name = "ruff" },
     { name = "trio" },
 ]
@@ -113,6 +118,7 @@ test = [
     { name = "pytest" },
     { name = "pytest-anyio" },
     { name = "pytest-cov" },
+    { name = "respx" },
     { name = "trio" },
 ]
 
@@ -971,6 +977,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/63/70/2bf7780ad2d390a8d301ad0b550f1581eadbd9a20f896afe06353c2a2913/requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760", size = 131218, upload_time = "2024-05-29T15:37:49.536Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6", size = 64928, upload_time = "2024-05-29T15:37:47.027Z" },
+]
+
+[[package]]
+name = "respx"
+version = "0.23.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/43/98/4e55c9c486404ec12373708d015ebce157966965a5ebe7f28ff2c784d41b/respx-0.23.1.tar.gz", hash = "sha256:242dcc6ce6b5b9bf621f5870c82a63997e8e82bc7c947f9ffe272b8f3dd5a780", size = 29243, upload_time = "2026-04-08T14:37:16.008Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/4a/221da6ca167db45693d8d26c7dc79ccfc978a440251bf6721c9aaf251ac0/respx-0.23.1-py2.py3-none-any.whl", hash = "sha256:b18004b029935384bccfa6d7d9d74b4ec9af73a081cc28600fffc0447f4b8c1a", size = 25557, upload_time = "2026-04-08T14:37:14.613Z" },
 ]
 
 [[package]]
